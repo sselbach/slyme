@@ -14,7 +14,7 @@ from utils import uniform_direction
 import initializers
 
 
-CONFIG_PATH = "profiles/disk.yaml"
+CONFIG_PATH = "profiles/disk_noisy.yaml"
 
 # load configuration file
 with open(CONFIG_PATH) as config_file:
@@ -91,7 +91,7 @@ class SlimeMoldSimulation(mglw.WindowConfig):
     
     def update(self, time):
         """A single simulation step. Dispatches agent and postprocessing shader."""
-        
+
         self.shader_agent.run(
             group_x=CONFIG["n_agents"] // 512 + 1,
             group_y=1,
