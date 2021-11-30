@@ -10,7 +10,7 @@ sensor_angle: 0.39269908169872414
 sensor_size: 3
 sensor_distance: 15.0
 rotation_angle: 0.7853981633974483
-random_noise_strength: 0.0
+random_noise_strength: 1.5
 noise_bias: 0.0
 
 # postprocess parameters

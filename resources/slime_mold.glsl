@@ -29,6 +29,7 @@ uniform int sensorSize;
 uniform float sensorDistance;
 uniform float rotationAngle;
 uniform float randomNoiseStrength;
+uniform float noiseBias;
 
 // time is used for pseudo-random number generation
 uniform uint time;
@@ -131,7 +132,11 @@ void main() {
     }
 
     // add random noise to direction
-    newDir = turn(newDir, random() * randomNoiseStrength);
+    float noise = random() * randomNoiseStrength;
+
+    noise = noise - (0.5 - 0.5 * noiseBias) * randomNoiseStrength;
+
+    newDir = turn(newDir, noise);
 
     vec2 newPos = agent.pos + newDir * speed;
 

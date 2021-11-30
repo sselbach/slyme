@@ -14,7 +14,7 @@ from utils import uniform_direction
 import initializers
 
 
-CONFIG_PATH = "profiles/disk_noisy.yaml"
+CONFIG_PATH = "profiles/experiments.yaml"
 
 # load configuration file
 with open(CONFIG_PATH) as config_file:
@@ -68,6 +68,7 @@ class SlimeMoldSimulation(mglw.WindowConfig):
             self.shader_agent["sensorDistance"] = CONFIG["sensor_distance"]
             self.shader_agent["rotationAngle"] = CONFIG["rotation_angle"]
             self.shader_agent["randomNoiseStrength"] = CONFIG["random_noise_strength"]
+            self.shader_agent["noiseBias"] = CONFIG["noise_bias"]
         
         except KeyError as e:
             print(e)
