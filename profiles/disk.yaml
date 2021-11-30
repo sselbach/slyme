@@ -1,0 +1,19 @@
+# simulation parameters
+width: 1400
+height: 1400
+n_agents: 500_000
+initializer: "disk"     # see initializers.py for available generators
+
+# agent parameters
+speed: 1.0
+sensor_angle: 0.39269908169872414
+sensor_size: 3
+sensor_distance: 15.0
+rotation_angle: 0.7853981633974483
+random_noise_strength: 0
+
+# postprocess parameters
+diffusion_strength: 0.4
+evaporate_exponentially: True
+evaporation_strength: 0.1
+minimal_amount: 0.01

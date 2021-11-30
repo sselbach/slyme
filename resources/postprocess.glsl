@@ -10,7 +10,7 @@ uniform uint height;
 uniform float diffusionStrength;
 uniform bool evaporateExponentially;
 uniform float evaporationStrength;
-uniform float minimalSensibleAmount;
+uniform float minimalAmount;
 
 
 void main() {
@@ -42,10 +42,7 @@ void main() {
     
     if (evaporateExponentially) {
         diffused *= 1.0 - evaporationStrength;
-        
-        if (diffused < minimalSensibleAmount) 
-            diffused = 0;
-            
+        diffused = max(minimalAmount, diffused);            
     } else {
         diffused = max(0, diffused - evaporationStrength);
     }

@@ -4,106 +4,103 @@ import moderngl_window as mglw
 from moderngl_window import geometry
 
 import numpy as np
+import yaml
 
 from array import array
 from random import random
 from math import sin, cos, sqrt, pi
 
-
-WIDTH, HEIGHT = 1400, 1400
-N_AGENTS = 500_000
-
-# agent parameters
-SPEED = 1.0
-SENSOR_ANGLE = pi / 8.0
-SENSOR_SIZE = 3
-SENSOR_DISTANCE = 15.0
-ROTATION_ANGLE = pi / 6.0
-RANDOM_NOISE_STRENGTH = 0.0
-
-# postprocess parameters
-DIFFUSION_STRENGTH = 0.4
-EVAPORATE_EXPONENTIALLY = True
-EVAPORATION_STRENGTH = 0.1
-MINIMAL_SENSIBLE_AMOUNT = 0
+from utils import uniform_direction
+import initializers
 
 
-def uniform_direction():
-    angle = random() * 2 * pi
+CONFIG_PATH = "profiles/disk.yaml"
 
-    return cos(angle), sin(angle)
+# load configuration file
+with open(CONFIG_PATH) as config_file:
+    CONFIG = yaml.load(config_file, yaml.Loader)
+
+print(CONFIG)
 
 
 class SlimeMoldSimulation(mglw.WindowConfig):
     title = "He's Moldin'"
     resource_dir = "resources"
     gl_version = 4, 3
-    window_size = WIDTH, HEIGHT
-    aspect_ratio = WIDTH / HEIGHT
+    window_size = CONFIG["width"], CONFIG["height"]
+    aspect_ratio = CONFIG["width"] / CONFIG["height"]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.texture_program = self.load_program("texture.glsl")
-        self.quad_fs = geometry.quad_fs()
-
+        # initialize and bind the texture that will be the pheromone trail map
         # default dtype of textures is 'f1', i.e. uint8 normalized to the range between 0 and 1
-        # TODO: currently, texture gets initialized with (0, 0, 0, 0) everywhere --> figure out how to initialize 
-        #       the alpha channel as 1. This can also be used to constrain the simulation to certain shapes.
-        self.texture = self.ctx.texture((WIDTH, HEIGHT), 4)
+        self.texture = self.ctx.texture((CONFIG["width"], CONFIG["height"]), 4)
         self.texture.filter = mgl.NEAREST, mgl.NEAREST
         self.texture.bind_to_image(0, read=True, write=True)
 
-        # Agent: vec2 pos, vec2 dir
-        self.buffer_agent = self.ctx.buffer(array("f", self._gen_initial_data2(N_AGENTS)))
+        # geometry that the texture will be applied to
+        self.quad_fs = geometry.quad_fs()
+
+        # absolutely no idea what this does.. 
+        self.texture_program = self.load_program("texture.glsl")
+
+        # get generator for initial agent data by string from the config
+        initializer = getattr(initializers, CONFIG["initializer"])
+
+        # initialize agents
+        # Agent: vec2 pos, vec2 dir --> 4 floats
+        initial_agents = initializer(CONFIG)
+        self.buffer_agent = self.ctx.buffer(array("f", initial_agents))
         self.buffer_agent.bind_to_storage_buffer(0)
 
-
+        # the agent compute shader is dispatched per agent and handles agent movement
         self.shader_agent = self.load_compute_shader("slime_mold.glsl")
 
         try:
-            self.shader_agent["width"] = WIDTH
-            self.shader_agent["height"] = HEIGHT
-            self.shader_agent["n_agents"] = N_AGENTS
+            self.shader_agent["width"] = CONFIG["width"]
+            self.shader_agent["height"] = CONFIG["height"]
+            self.shader_agent["n_agents"] = CONFIG["n_agents"]
 
-            self.shader_agent["speed"] = SPEED
-            self.shader_agent["sensorAngle"] = SENSOR_ANGLE
-            self.shader_agent["sensorSize"] = SENSOR_SIZE
-            self.shader_agent["sensorDistance"] = SENSOR_DISTANCE
-            self.shader_agent["rotationAngle"] = ROTATION_ANGLE
-            self.shader_agent["randomNoiseStrength"] = RANDOM_NOISE_STRENGTH
+            self.shader_agent["speed"] = CONFIG["speed"]
+            self.shader_agent["sensorAngle"] = CONFIG["sensor_angle"]
+            self.shader_agent["sensorSize"] = CONFIG["sensor_size"]
+            self.shader_agent["sensorDistance"] = CONFIG["sensor_distance"]
+            self.shader_agent["rotationAngle"] = CONFIG["rotation_angle"]
+            self.shader_agent["randomNoiseStrength"] = CONFIG["random_noise_strength"]
         
         except KeyError as e:
             print(e)
 
         
+        # the postprocessing compute shader is dispatched per texel and handles diffusion and evaporation
         self.shader_postprocess = self.load_compute_shader("postprocess.glsl")
 
         try:
-            self.shader_postprocess["width"] = WIDTH
-            self.shader_postprocess["height"] = HEIGHT
+            self.shader_postprocess["width"] = CONFIG["width"]
+            self.shader_postprocess["height"] = CONFIG["height"]
 
-            self.shader_postprocess["diffusionStrength"] = DIFFUSION_STRENGTH
-            self.shader_postprocess["evaporateExponentially"] = EVAPORATE_EXPONENTIALLY
-            self.shader_postprocess["evaporationStrength"] = EVAPORATION_STRENGTH
-            self.shader_postprocess["minimalSensibleAmount"] = MINIMAL_SENSIBLE_AMOUNT
+            self.shader_postprocess["diffusionStrength"] = CONFIG["diffusion_strength"]
+            self.shader_postprocess["evaporateExponentially"] = CONFIG["evaporate_exponentially"]
+            self.shader_postprocess["evaporationStrength"] = CONFIG["evaporation_strength"]
+            self.shader_postprocess["minimalAmount"] = CONFIG["minimal_amount"]
         
         except KeyError as e:
             print(e)
 
-        
+    
     def update(self, time):
-        # agent compute shader
+        """A single simulation step. Dispatches agent and postprocessing shader."""
+        
         self.shader_agent.run(
-            group_x=N_AGENTS // 512 + 1,
+            group_x=CONFIG["n_agents"] // 512 + 1,
             group_y=1,
             group_z=1
         )
 
-        # postprocessing compute shader
         self.shader_postprocess.run(
-            group_x=WIDTH // 16 + 1,
-            group_y=HEIGHT // 16 + 1,
+            group_x=CONFIG["width"] // 16 + 1,
+            group_y=CONFIG["height"] // 16 + 1,
             group_z=1
         )
 
@@ -115,42 +112,6 @@ class SlimeMoldSimulation(mglw.WindowConfig):
         # Render texture
         self.texture.use(location=0)
         self.quad_fs.render(self.texture_program)
-
-    def _gen_initial_data(self, n_agents):
-        for _ in range(n_agents):
-            # position
-            yield WIDTH / 2
-            yield HEIGHT / 2
-
-            # direction
-            dx, dy = uniform_direction()
-            #individual_speed = random()
-            individual_speed = 1
-
-            yield dx * individual_speed
-            yield dy * individual_speed
-
-    def _gen_initial_data2(self, n_agents):
-        for _ in range(n_agents):
-            # position: uniformly within a centered disk of radius R
-            R = 512
-
-            r = R * sqrt(random())
-            theta = random() * 2 * pi
-
-            x =  WIDTH / 2 + r * cos(theta)
-            y =  HEIGHT / 2 + r * sin(theta)
-
-            yield x
-            yield y
-
-            # direction: facing towards the center
-            dx = WIDTH / 2 - x
-            dy = HEIGHT / 2 - y
-            length = sqrt(dx ** 2 + dy ** 2)
-
-            yield dx / length
-            yield dy / length
 
 
 if __name__ == "__main__":
