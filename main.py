@@ -14,7 +14,7 @@ from utils import uniform_direction
 import initializers
 
 
-CONFIG_PATH = "profiles/experiments.yaml"
+CONFIG_PATH = "profiles/thick_worms.yaml"
 
 # load configuration file
 with open(CONFIG_PATH) as config_file:

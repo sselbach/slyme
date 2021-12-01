@@ -1,7 +1,7 @@
 # simulation parameters
-width: 1400
-height: 1400
-n_agents: 500_000
+width: 1300
+height: 1300
+n_agents: 1_500_000
 initializer: "disk"     # see initializers.py for available generators
 
 # agent parameters

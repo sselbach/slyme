@@ -144,12 +144,12 @@ void main() {
 
     // check if agent is out of map and adjust direction
     if (newPos.x < 0 || newPos.x > width) {
-        newPos.x = clamp(newPos.x, 0.1, width - 0.1);
+        newPos.x = clamp(newPos.x, 0.1, float(width) - 0.1);
         newDir.x *= -1;
     }
 
     if (newPos.y < 0 || newPos.y > height) {
-        newPos.y = clamp(newPos.y, 0.1, height - 0.1);
+        newPos.y = clamp(newPos.y, 0.1, float(height) - 0.1);
         newDir.y *= -1;
     }
 

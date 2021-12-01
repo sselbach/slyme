@@ -1,11 +1,11 @@
 # simulation parameters
-width: 1400
-height: 1400
-n_agents: 500_000
+width: 1300
+height: 1300
+n_agents: 750_000
 initializer: "disk"     # see initializers.py for available generators
 
 # agent parameters
-speed: 1.0
+speed: 0.5
 sensor_angle: 0.39269908169872414
 sensor_size: 3
 sensor_distance: 15.0
