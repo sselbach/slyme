@@ -3,7 +3,7 @@ width: 1300
 height: 1300
 n_agents: 1_500_000
 initializer: "disk"     # see initializers.py for available generators
-screenshot_after: 10
+screenshot_after: 5
 
 # agent parameters
 speed: 1.0

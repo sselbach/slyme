@@ -124,10 +124,10 @@ void main() {
     if (weightForward > weightLeft && weightForward > weightRight) {
         // do nothing
     } 
-    else if (weightForward < weightLeft && weightForward < weightRight) {
+    /*else if (weightForward < weightLeft && weightForward < weightRight) {
         // if forward is less then both, randomly choose wether to turn left or right
         newDir = turn(agent.dir, ((random() < 0.5) ? rotationAngle : -rotationAngle));
-    }
+    }*/
     else if (weightRight < weightLeft) {
         // turn left
         newDir = turn(agent.dir, rotationAngle);
@@ -164,21 +164,9 @@ void main() {
     Buf_agents.agents[id].dir = newDir;
 
     ivec2 texelPos = ivec2(agent.pos);
-    vec4 texel = vec4(0.0, 0.0, 0.0, 1.0);
+    vec4 texel = imageLoad(trailMap, texelPos);
 
-    switch (species) {
-        case 0:
-            texel.x = 1.0;
-            break;
-        
-        case 1:
-            texel.y = 1.0;
-            break;
-
-        case 2:
-            texel.z = 1.0;
-            break;
-    }
+    texel[species] = 1.0;
     
     imageStore(trailMap, texelPos, texel);
 }
