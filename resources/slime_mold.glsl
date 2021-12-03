@@ -30,6 +30,8 @@ uniform float sensorDistance;
 uniform float rotationAngle;
 uniform float randomNoiseStrength;
 uniform float noiseBias;
+uniform int n_species;
+uniform float interspeciesAversion;
 
 // time is used for pseudo-random number generation
 uniform uint time;
@@ -54,7 +56,7 @@ float random() {
     return float(RNGState) / maxPossibleHash;
 }
 
-float sense(Agent agent, float sensorAngleOffset) {
+float sense(Agent agent, float sensorAngleOffset, uint species) {
     float angle = atan(agent.dir.y, agent.dir.x);
 
     float sensorAngle = angle + sensorAngleOffset;
@@ -66,6 +68,8 @@ float sense(Agent agent, float sensorAngleOffset) {
     int oddSize = sensorSize % 2;
 
     float sum = 0.0;
+    vec3 weights = vec3(-interspeciesAversion);
+    weights[species] = 1.0;
 
     for (int dy = -halfSize; dy < (halfSize + oddSize); dy++) {
         for (int dx = -halfSize; dx < (halfSize + oddSize); dx++) {
@@ -73,7 +77,8 @@ float sense(Agent agent, float sensorAngleOffset) {
             int y = sensorCenter.y + dy;
 
             if (x >= 0 && x < width && y >= 0 && y < height) {
-                sum += imageLoad(trailMap, ivec2(x, y)).r;
+                vec3 texel = imageLoad(trailMap, ivec2(x, y)).rgb;
+                sum += dot(texel, weights);
             }
         }
     }
@@ -106,13 +111,14 @@ void main() {
     RNGState = time * n_agents + id;
 
     Agent agent = Buf_agents.agents[id];
+    uint species = id % n_species;
 
     vec2 newDir = agent.dir;
 
     // measure pheromone level at all three sensors
-    float weightForward = sense(agent, 0.0);
-    float weightLeft = sense(agent, sensorAngle);
-    float weightRight = sense(agent, -sensorAngle);
+    float weightForward = sense(agent, 0.0, species);
+    float weightLeft = sense(agent, sensorAngle, species);
+    float weightRight = sense(agent, -sensorAngle, species);
 
     // choose steering direction based on results
     if (weightForward > weightLeft && weightForward > weightRight) {
@@ -158,7 +164,21 @@ void main() {
     Buf_agents.agents[id].dir = newDir;
 
     ivec2 texelPos = ivec2(agent.pos);
-    const vec4 texel = vec4(1.0, 1.0, 1.0, 1.0);
+    vec4 texel = vec4(0.0, 0.0, 0.0, 1.0);
+
+    switch (species) {
+        case 0:
+            texel.x = 1.0;
+            break;
+        
+        case 1:
+            texel.y = 1.0;
+            break;
+
+        case 2:
+            texel.z = 1.0;
+            break;
+    }
     
     imageStore(trailMap, texelPos, texel);
 }

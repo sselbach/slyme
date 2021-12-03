@@ -15,7 +15,7 @@ from utils import uniform_direction
 import initializers
 
 
-CONFIG_PATH = "profiles/disk_noisy.yaml"
+CONFIG_PATH = "profiles/thick_worms.yaml"
 
 # load configuration file
 with open(CONFIG_PATH) as config_file:
@@ -37,6 +37,7 @@ class SlimeMoldSimulation(mglw.WindowConfig):
         self.texture = self.ctx.texture((CONFIG["width"], CONFIG["height"]), 4)
         self.texture.filter = mgl.NEAREST, mgl.NEAREST
         self.texture.bind_to_image(0, read=True, write=True)
+        self.texture.use(location=0)
 
         # geometry that the texture will be applied to
         self.quad_fs = geometry.quad_fs()
@@ -57,6 +58,7 @@ class SlimeMoldSimulation(mglw.WindowConfig):
         self.shader_agent = self.load_compute_shader("slime_mold.glsl")
 
         try:
+            # TODO: use dict.get to have default values for CONFIG
             self.shader_agent["width"] = CONFIG["width"]
             self.shader_agent["height"] = CONFIG["height"]
             self.shader_agent["n_agents"] = CONFIG["n_agents"]
@@ -68,6 +70,8 @@ class SlimeMoldSimulation(mglw.WindowConfig):
             self.shader_agent["rotationAngle"] = CONFIG["rotation_angle"]
             self.shader_agent["randomNoiseStrength"] = CONFIG["random_noise_strength"]
             self.shader_agent["noiseBias"] = CONFIG["noise_bias"]
+            self.shader_agent["n_species"] = CONFIG["n_species"]
+            self.shader_agent["interspeciesAversion"] = CONFIG["interspecies_aversion"]
         
         except KeyError as e:
             print(e)
@@ -77,6 +81,7 @@ class SlimeMoldSimulation(mglw.WindowConfig):
         self.shader_postprocess = self.load_compute_shader("postprocess.glsl")
 
         try:
+            # TODO: use dict.get to have default values for CONFIG
             self.shader_postprocess["width"] = CONFIG["width"]
             self.shader_postprocess["height"] = CONFIG["height"]
 
@@ -120,7 +125,6 @@ class SlimeMoldSimulation(mglw.WindowConfig):
             self.screenshot_done = True
         
         # Render texture
-        self.texture.use(location=0)
         self.quad_fs.render(self.texture_program)
 
 

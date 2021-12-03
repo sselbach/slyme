@@ -15,13 +15,13 @@ uniform float minimalAmount;
 
 void main() {
     ivec2 texelPos = ivec2(gl_GlobalInvocationID.xy);
-    float texel = imageLoad(trailMap, texelPos).r;
+    vec3 texel = imageLoad(trailMap, texelPos).rgb;
 
     if (texelPos.x >= width || texelPos.y >= height) 
         return;
 
     // STEP 1: Blurring using box filter, might replace with Gaussian filter later
-    float blur = 0.0;
+    vec3 blur = vec3(0.0);
 
     for (int dy = -1; dy <= 1; dy++) {
         for (int dx = -1; dx <= 1; dx++) {
@@ -29,24 +29,24 @@ void main() {
             int y = texelPos.y + dy;
 
             if (x >= 0 && x < width && y >= 0 && y < height) {
-                blur += imageLoad(trailMap, ivec2(x, y)).r;
+                blur += imageLoad(trailMap, ivec2(x, y)).rgb;
             }
         }
     }
 
     blur /= 9.0;
 
-    float diffused = mix(texel, blur, diffusionStrength);
+    vec3 diffused = mix(texel, blur, diffusionStrength);
 
     // STEP 2: Evaporate using either exponential or linear decay
     
     if (evaporateExponentially) {
         diffused *= 1.0 - evaporationStrength;
-        diffused = max(minimalAmount, diffused);            
+        diffused = max(vec3(minimalAmount), diffused);            
     } else {
-        diffused = max(0, diffused - evaporationStrength);
+        diffused = max(vec3(0.0), diffused - evaporationStrength);
     }
 
 
-    imageStore(trailMap, texelPos, vec4(diffused, diffused, diffused, 1.0));
+    imageStore(trailMap, texelPos, vec4(diffused, 1.0));
 }

@@ -3,7 +3,7 @@ width: 2560
 height: 1440
 n_agents: 750_000
 initializer: "disk"     # see initializers.py for available generators
-screenshot_after: 20
+screenshot_after: .inf
 
 # agent parameters
 speed: 0.5
@@ -13,6 +13,8 @@ sensor_distance: 15.0
 rotation_angle: 0.7853981633974483
 random_noise_strength: 0.5
 noise_bias: -1.0
+n_species: 2
+interspecies_aversion: 0.0
 
 # postprocess parameters
 diffusion_strength: 0.4

@@ -1,8 +1,9 @@
 # simulation parameters
 width: 1300
 height: 1300
-n_agents: 1_000_000
+n_agents: 1_500_000
 initializer: "disk"     # see initializers.py for available generators
+screenshot_after: 10
 
 # agent parameters
 speed: 1.0
@@ -12,6 +13,8 @@ sensor_distance: 15.0
 rotation_angle: 0.7853981633974483
 random_noise_strength: 0.0
 noise_bias: 0.0
+n_species: 3
+interspecies_aversion: 1.0
 
 # postprocess parameters
 diffusion_strength: 0.4
