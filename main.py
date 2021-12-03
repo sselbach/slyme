@@ -5,6 +5,7 @@ from moderngl_window import geometry
 
 import numpy as np
 import yaml
+from PIL import Image
 
 from array import array
 from random import random
@@ -14,13 +15,11 @@ from utils import uniform_direction
 import initializers
 
 
-CONFIG_PATH = "profiles/thick_worms.yaml"
+CONFIG_PATH = "profiles/disk_noisy.yaml"
 
 # load configuration file
 with open(CONFIG_PATH) as config_file:
     CONFIG = yaml.load(config_file, yaml.Loader)
-
-print(CONFIG)
 
 
 class SlimeMoldSimulation(mglw.WindowConfig):
@@ -89,6 +88,9 @@ class SlimeMoldSimulation(mglw.WindowConfig):
         except KeyError as e:
             print(e)
 
+        # set a flag no screenshot has been taken yet
+        self.screenshot_done = False
+
     
     def update(self, time):
         """A single simulation step. Dispatches agent and postprocessing shader."""
@@ -110,6 +112,13 @@ class SlimeMoldSimulation(mglw.WindowConfig):
 
         self.update(time)
 
+        # check if it's time to take a screenshot
+        if time > CONFIG.get("screenshot_after", float("inf")) and not self.screenshot_done:
+            im = Image.frombuffer("RGBA", (CONFIG["width"], CONFIG["height"]), self.texture.read(), "raw")
+            im.save("screenshot.png", format="png")
+
+            self.screenshot_done = True
+        
         # Render texture
         self.texture.use(location=0)
         self.quad_fs.render(self.texture_program)
